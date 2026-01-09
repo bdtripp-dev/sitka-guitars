@@ -1,0 +1,22 @@
+# Ignore core WordPress files and directories
+/wp-admin/
+/wp-includes/
+/index.php
+/license.txt
+/readme.html
+/xmlrpc.php
+/wp-*.php
+.htaccess
+
+# Ignore sensitive configuration files (manage these separately per environment)
+wp-config.php
+
+# Ignore all content directories (themes, plugins, uploads, etc.)
+/wp-content/*
+
+# Ignore logs, backups, and OS-generated files
+*.log
+error_log
+*~
+.DS_Store
+Thumbs.db
