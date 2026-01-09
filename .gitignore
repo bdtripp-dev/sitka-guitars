@@ -1,3 +1,5 @@
+# Note: the following ignores everything except for my notes and .gitignore itself. 
+
 # Ignore core WordPress files and directories
 /wp-admin/
 /wp-includes/
