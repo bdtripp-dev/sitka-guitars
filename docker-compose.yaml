@@ -35,6 +35,9 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - sitka_net
+    secrets:
+      - db_password
+      - db_root_password
 volumes:
   wp-content:
   db-data:
