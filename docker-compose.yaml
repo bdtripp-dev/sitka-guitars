@@ -1,0 +1,68 @@
+services:
+  portfolio: # Other services could be db, api, or app
+    image: bdtrippdev/portfolio:${TAG}
+    restart: always
+    labels:
+      - "deunhealth.restart=true"
+    environment:
+      - VIRTUAL_HOST=${FQDN}
+      - ENV_NAME=${ENV_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
+      interval: 30s
+      start_period: 20s
+    networks:
+      - public_net
+networks:
+  public_net:
+    name: ${ENV_NAME}_public
+    external: true
+    
+
+################Remove above code after making sure I don't need it, it is just copied from portfolio, 
+################havnt changed it at all. just there for reference####################
+version: "3.9"
+
+services:
+  wordpress:
+    build: .
+    depends_on:
+      - db
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+
+      VIRTUAL_HOST: ${DOMAIN}
+
+    volumes:
+      - wp-content:/var/www/html/wp-content
+
+    networks:
+      - sitka_net
+      - public_net
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - sitka_net
+
+volumes:
+  wp-content:
+  db-data:
+
+networks:
+  sitka-net:
+    driver: bridge
+
+    public_net:
+      name: ${ENV_NAME}_public
+      external: true
