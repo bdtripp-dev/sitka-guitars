@@ -1,26 +1,62 @@
-# Note: the following ignores everything except for my notes and .gitignore itself. 
+# ============================================================
+# 1. Environment Variables (critical)
+# ============================================================
+.env
+.env.*
 
-# Ignore core WordPress files and directories
-/wp-admin/
-/wp-includes/
-/index.php
-/license.txt
-/readme.html
-/xmlrpc.php
-/wp-*.php
-.htaccess
+# ============================================================
+# 2. WordPress Core (provided by Docker image)
+# ============================================================
+wp/wp-admin/
+wp/wp-includes/
+wp/wp-*.php
+wp/index.php
+wp/xmlrpc.php
+wp/license.txt
+wp/readme.html
+wp/.htaccess
 
-# Ignore sensitive configuration files (manage these separately per environment)
-wp-config.php
+# Environment-specific config (never tracked)
+wp/wp-config.php
 
-# Ignore all content directories (themes, plugins, uploads, etc.)
-/wp-content/*
+# ============================================================
+# 3. wp-content (track themes/plugins, ignore runtime folders)
+# ============================================================
 
-# Ignore logs, backups, and OS-generated files
+# User-generated / runtime content
+wp/wp-content/uploads/
+wp/wp-content/cache/
+wp/wp-content/upgrade/
+wp/wp-content/upgrade-temp-backup/
+wp/wp-content/gallery/
+wp/wp-content/ngg/
+wp/wp-content/debug.log
+
+# ============================================================
+# 4. Explicitly keep themes and plugins (your actual code)
+# ============================================================
+!wp/wp-content/themes/
+!wp/wp-content/plugins/
+!wp/wp-content/themes/**
+!wp/wp-content/plugins/**
+
+# ============================================================
+# 5. Build artifacts inside themes/plugins only
+# ============================================================
+wp/wp-content/*/*/node_modules/
+wp/wp-content/*/*/vendor/
+
+# ============================================================
+# 6. Logs, OS junk, editor files
+# ============================================================
 *.log
 error_log
 *~
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
 
-.env
+*:Zone.Identifier
+docker-compose.override.yml
+/secrets
