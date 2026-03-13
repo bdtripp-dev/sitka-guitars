@@ -1,19 +1,15 @@
 <?php
-
 /**
  * Customizer Builder Control Base
  *
  * @since 4.0
  */
-
 namespace CustomFacebookFeed\Builder\Controls;
 
-if (!defined('ABSPATH')) {
-	exit;
-}
+if(!defined('ABSPATH'))	exit;
 
-abstract class CFF_Controls_Base
-{
+abstract class CFF_Controls_Base{
+
 	/**
 	 * Get control type.
 	 *
@@ -23,9 +19,8 @@ abstract class CFF_Controls_Base
 	 * @access public
 	 *
 	 * @return string
-	 */
-	public function get_type()
-	{
+	*/
+	public function get_type(){
 		return '';
 	}
 
@@ -38,9 +33,8 @@ abstract class CFF_Controls_Base
 	 * @access public
 	 *
 	 * @return array
-	 */
-	public function get_info()
-	{
+	*/
+	public function get_info(){
 		return [
 			'id' 			=> '',
 			'type' 			=> '',
@@ -58,25 +52,24 @@ abstract class CFF_Controls_Base
 	/**
 	 * Control Output
 	 *
+	 *
 	 * @since 4.0
 	 * @access public
 	 *
 	 * @return HTML
-	 */
-	public function get_control_output($controlEditingTypeModel)
-	{
-	}
+	*/
+	public function get_control_output($controlEditingTypeModel){}
 
 	/**
 	 * Getting Editing Control Type
+	 *
 	 *
 	 * @since 1.0.0
 	 * @access public
 	 *
 	 * @return String
-	 */
-	public function get_control_edit_type($editingType)
-	{
+	*/
+	public function get_control_edit_type($editingType){
 		switch ($editingType) {
 			case 'settings':
 				return 'customizerFeedData.settings';
@@ -87,16 +80,16 @@ abstract class CFF_Controls_Base
 	/**
 	 * Get Control HTML.
 	 *
+	 *
 	 * @since 4.0
 	 * @access public
 	 *
 	 * @return HTML
-	 */
-	public function print_control_wrapper($editingType)
-	{
+	*/
+	public function print_control_wrapper($editingType){
 		$control_type = $this->get_type();
 		$controlEditingTypeModel = $this->get_control_edit_type($editingType);
-		?>
+	?>
 
 	<div class="sb-control-elem-ctn cff-fb-fs" v-if="control.type == '<?php echo $control_type ?>'"
 		v-show="isControlShown(control)"
@@ -135,6 +128,7 @@ abstract class CFF_Controls_Base
 			<?php $this->get_control_output($controlEditingTypeModel); ?>
 		</div>
 	</div>
-		<?php
+	<?php
 	}
+
 }

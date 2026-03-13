@@ -1,5 +1,4 @@
 <?php
-
 /**
  * The Settings Trait
  *
@@ -44,7 +43,7 @@ class CFF_Graph_Url
 
 		switch ($type) {
 			case 'timeline':
-				// Logic to get the Graph query
+				//Logic to get the Graph query
 				if ($settings['showpostsby'] === 'others' || $is_group) {
 					$url_builder['query'] = 'feed';
 				}
@@ -110,8 +109,7 @@ class CFF_Graph_Url
 		];
 
 		if ($settings['pagetype'] === 'group') {
-			array_merge(
-				$feed_type_fields['timeline']['common_fields'],
+			array_merge($feed_type_fields['timeline']['common_fields'],
 				[
 					'reactions' => [
 						'reactions_limit' => 0
@@ -119,8 +117,7 @@ class CFF_Graph_Url
 				]
 			);
 		} else {
-			array_merge(
-				$feed_type_fields['timeline']['common_fields'],
+			array_merge($feed_type_fields['timeline']['common_fields'],
 				[
 					'likes' => [
 						'likes_limit' => 0
@@ -185,4 +182,5 @@ class CFF_Graph_Url
 		];
 		return isset($args[$type]) && !empty($args[$type]) ? $api_call_args[$type] : '';
 	}
+
 }

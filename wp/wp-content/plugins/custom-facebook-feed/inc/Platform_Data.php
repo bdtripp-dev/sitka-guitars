@@ -1,11 +1,9 @@
 <?php
-
 /**
  * Platform Data
  *
  * @package Platform_Data
  */
-
 namespace CustomFacebookFeed;
 
 use CustomFacebookFeed\Builder\CFF_Db;
@@ -25,6 +23,7 @@ if (!defined('ABSPATH')) {
  */
 class Platform_Data
 {
+
 	/**
 	 * Option key for app statuses.
 	 *
@@ -70,7 +69,7 @@ class Platform_Data
 	/**
 	 * Handle the platform data on the API response.
 	 *
-	 * @param array  $response The response from the API.
+	 * @param array $response The response from the API.
 	 * @param string $url The URL of the request.
 	 *
 	 * @return void
@@ -212,7 +211,7 @@ class Platform_Data
 	 * Update the app permission revoked status.
 	 *
 	 * @param array $cff_statuses_option The option value.
-	 * @param bool  $is_revoked The revoke status.
+	 * @param bool $is_revoked The revoke status.
 	 *
 	 * @return void
 	 */
@@ -261,7 +260,7 @@ class Platform_Data
 	 */
 	public function handle_unused_feed_usage()
 	{
-		// Security Checks
+		//Security Checks
 		check_ajax_referer('cff_nonce', 'cff_nonce');
 		$cap = current_user_can('manage_custom_facebook_feed_options') ? 'manage_custom_facebook_feed_options' : 'manage_options';
 		if (!current_user_can($cap)) {
@@ -270,7 +269,7 @@ class Platform_Data
 
 		\cff_main()->cff_error_reporter->remove_error('unused_feed');
 
-		// ##############
+		//##############
 		$manager = new SB_Facebook_Data_Manager();
 		$manager->update_last_used();
 		$cff_statuses_option = get_option(self::CFF_STATUSES_OPTION_KEY, []);
@@ -359,5 +358,8 @@ class Platform_Data
 	 */
 	protected function platform_data_deleted_notice()
 	{
+
 	}
+
 }
+?>
