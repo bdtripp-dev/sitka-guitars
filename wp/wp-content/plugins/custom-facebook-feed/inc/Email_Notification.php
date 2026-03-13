@@ -2,7 +2,7 @@
 
 namespace CustomFacebookFeed;
 
-use CustomFacebookFeed\CFF_Education;
+use \CustomFacebookFeed\CFF_Education;
 
 if (!defined('ABSPATH')) {
 	exit; // Exit if accessed directly
@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
  */
 class Email_Notification
 {
+
 	/**
 	 * Sends a notification email to the admin(s) of the site.
 	 *
