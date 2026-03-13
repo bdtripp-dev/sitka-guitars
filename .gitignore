@@ -58,5 +58,6 @@ Thumbs.db
 .idea/
 
 *:Zone.Identifier
-/secrets
+secrets/
 local.sql
+docker-compose.override.yaml
