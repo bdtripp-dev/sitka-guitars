@@ -9,6 +9,8 @@ jobs:
   deploy-for-dev:
     if: github.ref == 'refs/heads/dev'
     uses: bdtripp-dev/infra-proxy-stack/.github/workflows/reusable-deploy.yaml@dev
+    with:
+      deploy-type: "git"
     secrets: inherit # Passes necessary organization level GitHub secrets
   deploy-for-production:
     if: github.ref == 'refs/heads/master'
