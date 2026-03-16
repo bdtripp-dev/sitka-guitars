@@ -11,10 +11,10 @@ jobs:
     uses: bdtripp-dev/infra-proxy-stack/.github/workflows/reusable-deploy.yaml@dev
     with:
       deploy_type: "git"
-    secrets: inherit # Passes necessary organization level GitHub secrets
+    secrets: inherit
   deploy-for-production:
     if: github.ref == 'refs/heads/master'
     uses: bdtripp-dev/infra-proxy-stack/.github/workflows/reusable-deploy.yaml@master
     with:
       deploy_type: "git"
-    secrets: inherit # Passes necessary organization level GitHub secrets
+    secrets: inherit

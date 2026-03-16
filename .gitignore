@@ -22,8 +22,6 @@ wp/wp-config.php
 # ============================================================
 # 3. wp-content (track themes/plugins, ignore runtime folders)
 # ============================================================
-
-# User-generated / runtime content
 wp/wp-content/uploads/
 wp/wp-content/cache/
 wp/wp-content/upgrade/
@@ -31,20 +29,22 @@ wp/wp-content/upgrade-temp-backup/
 wp/wp-content/gallery/
 wp/wp-content/ngg/
 wp/wp-content/debug.log
+wp/wp-content/languages/
+wp/wp-content/ai1wm-backups/
 
 # ============================================================
 # 4. Explicitly keep themes and plugins (your actual code)
 # ============================================================
-!wp/wp-content/themes/
-!wp/wp-content/plugins/
 !wp/wp-content/themes/**
 !wp/wp-content/plugins/**
 
 # ============================================================
-# 5. Build artifacts inside themes/plugins only
+# 5. Build artifacts inside custom themes/plugins only
 # ============================================================
-wp/wp-content/*/*/node_modules/
-wp/wp-content/*/*/vendor/
+wp/wp-content/themes/*/node_modules/
+wp/wp-content/plugins/*/node_modules/
+wp/wp-content/themes/*/composer.lock
+wp/wp-content/plugins/*/composer.lock
 
 # ============================================================
 # 6. Logs, OS junk, editor files
@@ -52,7 +52,7 @@ wp/wp-content/*/*/vendor/
 *.log
 error_log
 *~
-.DS_Store
+**/.DS_Store
 Thumbs.db
 .vscode/
 .idea/
