@@ -1,6 +1,6 @@
 services:
   wordpress:
-    build: ./docker/wordpress
+    build: .
     restart: always
     labels:
       - "deunhealth.restart=true"
