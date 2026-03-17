@@ -1,6 +1,6 @@
 services:
   wordpress:
-    image: wordpress:php8.2-apache
+    build: ./docker/wordpress
     restart: always
     labels:
       - "deunhealth.restart=true"

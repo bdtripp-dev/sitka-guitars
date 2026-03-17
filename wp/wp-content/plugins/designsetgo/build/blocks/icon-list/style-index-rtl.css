@@ -1,0 +1,1 @@
+.dsgo-icon-list{list-style:none;margin:0;padding:0}.dsgo-icon-list--horizontal .dsgo-icon-list__items{flex-wrap:wrap}@media(max-width:1024px){.dsgo-icon-list--horizontal .dsgo-icon-list__items{flex-direction:column!important}}@media(max-width:600px){.dsgo-icon-list--grid .dsgo-icon-list__items{grid-template-columns:1fr!important}}
