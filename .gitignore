@@ -61,3 +61,4 @@ Thumbs.db
 secrets/
 local.sql
 docker-compose.override.yaml
+wp/wp-content/temp/
