@@ -1,21 +1,26 @@
-=== Social Icons & Sharing Buttons by WPZOOM ===
+=== Social Icons Widget & Block - Social Media Icons & Share Buttons ===
 Contributors: WPZOOM, ciorici
 Donate link: https://www.wpzoom.com/
-Tags: social icons, social media, social sharing, share buttons, social media buttons
-Requires at least: 6.0
+Tags: social icons, social media icons, share buttons, social sharing, social media widget
+Requires at least: 6.5
 Requires PHP: 7.4
-Tested up to: 6.9
-Stable tag: 4.5.3
+Tested up to: 7.0
+Stable tag: 4.5.9
 License: GNU General Public License v2.0 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Add social media icons and sharing buttons to your website! Social Icons & Sharing Buttons includes 400+ icons and customizable sharing buttons.
+Social media icons plugin for WordPress - Add 400+ social icons and share buttons. Gutenberg block, widget & Elementor support. GDPR compliant.
 
 == Description ==
 
+= Social Media Icons & Share Buttons for WordPress =
+
+**The best social icons plugin for WordPress.** Add beautiful social media icons and share buttons anywhere on your site. 400+ icons, Gutenberg block, widget, Elementor support - all in one plugin.
+
 > Did you find this plugin helpful? Please consider [leaving a 5-star review](http://wordpress.org/support/view/plugin-reviews/social-icons-widget-by-wpzoom).
 
-**[View Demo](https://demo.wpzoom.com/social-icons/)**
+**[Social Icons Block Demo](https://demo.wpzoom.com/social-icons/)**
+**[Sharing Buttons Demo](https://demo.wpzoom.com/social-icons/2016/04/21/sharing-buttons/)**
 
 **Social Icons & Sharing Buttons** helps you to add social media icons and sharing buttons to your website. The plugin includes several icon sets, which gives you the possibility to use the widget for more than just linking to your social media profiles. You can use generic icons to add links to anything you want, and enable sharing buttons to let visitors share your content across social networks.
 
@@ -33,31 +38,6 @@ Add social media icons and sharing buttons to your website! Social Icons & Shari
 = What's new in 4.0.0 =
 * **NEW: Gutenberg Block**
 * New icon styles in the new Social Icons Block
-* New options to customize your icons: change margin, padding, alignment, roundness etc.
-
-= What's new in 3.0.0 =
-
-* Added Global Color Picker to change the color of all icons
-* Added a new color picker to change hover color on all icons
-* Icons are now grouped in categories
-
-= What's new in 2.2.0 =
-
-* Added Padding and Size options for icons
-* Added support for Skype links (skype:username)
-
-= What's new in 2.1.0 =
-
-* Search Icons by keywords
-* FontAwesome Icon Set Integration
-* Updated Instagram Icon
-
-= What's new in 2.0 =
-
-* New custom icons
-* Color picker for each icon
-* 3 Icon Sets from which you can choose more than 400 icons
-
 
 = Where I can view a Demo? =
 
@@ -65,7 +45,7 @@ You can view the plugin live in all our themes at [WPZOOM](https://www.wpzoom.co
 
 = View Demo & Examples =
 * [Foodica Theme](https://demo.wpzoom.com/?theme=foodica) - header bar and sidebar
-* [Inspiro Theme](https://demo.wpzoom.com/?theme=inspiro-demo) - sidebar panel and footer
+* [Inspiro Theme](https://demo.wpzoom.com/inspiro) - sidebar panel and footer
 
 = Features: =
 
@@ -83,7 +63,7 @@ You can view the plugin live in all our themes at [WPZOOM](https://www.wpzoom.co
 * Elementor Widget Integration
 
 **Social Sharing Buttons Block:**
-* 12+ Sharing Platforms: Facebook, X, Threads, LinkedIn, Pinterest, Reddit, Pocket, Telegram, WhatsApp, Bluesky, Email, Copy Link, and Print
+* 12+ Sharing Platforms: Facebook, X, Threads, LinkedIn, Pinterest, Reddit, Telegram, WhatsApp, Bluesky, Email, Copy Link, and Print
 * Multiple Button Styles: Circle, Square, Rounded, Outlined, Minimal, One-tone
 * Customizable Colors, Sizes, Padding & Margins
 * Show/Hide Labels
@@ -91,19 +71,35 @@ You can view the plugin live in all our themes at [WPZOOM](https://www.wpzoom.co
 * Copy Link Button with Visual Feedback
 * X/Twitter Username Integration (via parameter)
 
+= PRO Features =
+
+Upgrade to [Social Icons Widget PRO](https://www.wpzoom.com/plugins/social-share/) to unlock powerful features:
+
+* **Floating Buttons** - Display social sharing icons as a fixed floating bar on the side of your website (NEW!)
+* **Share Analytics Dashboard** - Track how visitors share your content with detailed analytics
+* **Like Button** - Add a like button to let visitors engage with your posts
+* **AI Share Buttons** - Share to ChatGPT, Claude, and Perplexity AI platforms
+* **Share Counts** - Display total and individual share counts on buttons
+* **External Share Counts** - Fetch real share counts from Facebook, Pinterest via SharedCount API
+* **Custom SVG Icon Uploads** - Upload your own custom SVG icons
+* **Nav Menu Integration** - Add social icons directly to WordPress navigation menus
+* **Dashboard Widget** - Quick stats overview right on your WordPress dashboard
+* **Priority Support** - Get help faster with priority email support
+
+[Learn more about PRO →](https://www.wpzoom.com/plugins/social-share/)
+
 **General Features:**
 * 100+ Sites/Social Networks Supported
 * FontAwesome Integration
 * Academicons Integration: 38 Academia Icons for Academics
 * Supports Email Addresses (mailto:email@example.com)
 * Supports Telephone Numbers (tel:12345)
-* Supports Skype (skype:username?call)
 * Supports Viber (viber://add?number=123456)
 * Supports WhatsApp (https://api.whatsapp.com/send?phone=15551234567)
 
 = Icons =
 
-Twitter, X, Facebook, Instagram, Pinterest, Snapchat, Threads, Yelp, LinkedIn, Bloglovin', Lookbook, Feedly, Periscope, SoundCloud, Spotify, Last.fm, YouTube, Vimeo, Flickr, 500px, Tumblr, Blogger, Reddit, Dribbble, Envato, Behance, DeviantArt, GitHub, RSS, Disqus, Stackoverflow, Komoot, Tiktok, Mailchimp, Podcasts, Telegram, TripAdvisor, AirBnb, Baidu, ebay, Medium, Periscope, Snapchat, Bandcamp, Eyem, Viber, Quora, Etsy, Meetup, Linode, IMDB, Overwatch, Strava, Tidal, Deezer, Unsplash, Codered, Udemy, CrunchBase, Angie's List, App Store, Nextdoor, WhatsApp, ResearchGate, Slack, Songkick, ReverbNation, Bluesky, Pocket
+Twitter, X, Facebook, Instagram, Pinterest, Snapchat, Threads, Yelp, LinkedIn, Bloglovin', Lookbook, Feedly, Periscope, SoundCloud, Spotify, Last.fm, YouTube, Vimeo, Flickr, 500px, Tumblr, Blogger, Reddit, Dribbble, Envato, Behance, DeviantArt, GitHub, RSS, Disqus, Stackoverflow, Komoot, Tiktok, Mailchimp, Podcasts, Telegram, TripAdvisor, AirBnb, Baidu, ebay, Medium, Periscope, Snapchat, Bandcamp, Eyem, Viber, Quora, Etsy, Meetup, Linode, IMDB, Overwatch, Strava, Tidal, Deezer, Unsplash, Codered, Udemy, CrunchBase, Angie's List, App Store, Nextdoor, WhatsApp, ResearchGate, Slack, Songkick, ReverbNation, Bluesky
 
 = Credits =
 
@@ -130,7 +126,7 @@ After that go to the **Widgets** page and add the widget **Social Icons by WPZOO
 
 = Where do I find more details about this plugin? =
 
-On our [website](http://www.wpzoom.com/plugins/social-widget/).
+On our [website](http://www.wpzoom.com/plugins/social-share/).
 
 = How can I add Social Icons to a Page? =
 
@@ -151,7 +147,7 @@ Yes! The Social Sharing Buttons Block offers multiple style presets (Circle, Squ
 
 = What sharing platforms are supported? =
 
-The plugin supports 12+ sharing platforms: Facebook, X (Twitter), Threads, LinkedIn, Pinterest, Reddit, Pocket, Telegram, WhatsApp, Bluesky, Email, Copy Link, and Print.
+The plugin supports 12+ sharing platforms: Facebook, X (Twitter), Threads, LinkedIn, Pinterest, Reddit, Telegram, WhatsApp, Bluesky, Email, Copy Link, and Print.
 
 = How does the Print button work? =
 
@@ -173,6 +169,23 @@ No. The plugin is optimized for performance and only loads the icon fonts and sc
 
 Yes! Social Icons & Sharing Buttons does not collect any information from your visitors, therefore it's 100% GDPR compliant.
 
+= What features are available in the PRO version? =
+
+[Social Icons Widget PRO](https://www.wpzoom.com/plugins/social-share/) includes these additional features:
+
+* **Floating Buttons** - Display sharing icons as a fixed floating bar on the side of your website
+* **Share Analytics** - Track shares across all platforms with a beautiful analytics dashboard
+* **Like Button** - Let visitors like your posts with engagement tracking
+* **AI Share Buttons** - Share content to ChatGPT, Claude, and Perplexity
+* **Share Counts** - Display share counts on buttons (both internal tracking and external via SharedCount API)
+* **Custom SVG Uploads** - Upload your own custom icons
+* **Nav Menu Integration** - Add social icons to your navigation menus
+* **Priority Support** - Get faster help with priority email support
+
+= What are Floating Buttons? =
+
+Floating Buttons is a PRO feature that displays your social sharing icons as a fixed bar on the side of your website. Visitors can share your content from anywhere on the page without scrolling. You can configure the position (left/right side, top/middle/bottom), choose vertical or horizontal layout, and control which post types display the floating bar. [Upgrade to PRO](https://www.wpzoom.com/plugins/social-share/) to unlock this feature.
+
 == Screenshots ==
 
 1. Social Icons & Sharing Buttons Preview
@@ -187,6 +200,24 @@ Yes! Social Icons & Sharing Buttons does not collect any information from your v
 10. Social Sharing Buttons - No Label Style
 
 == Changelog ==
+
+= 4.5.9 =
+* Minor fix
+
+= 4.5.8 =
+* Added Substack icon
+
+= 4.5.7 =
+* Minor fixes
+
+= 4.5.6 =
+* Minor fixes
+
+= 4.5.5 =
+* Minor fixes
+
+= 4.5.4 =
+* Minor fixes
 
 = 4.5.3 =
 * Minor bug fix

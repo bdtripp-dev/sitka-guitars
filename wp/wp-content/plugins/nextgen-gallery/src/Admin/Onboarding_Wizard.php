@@ -153,6 +153,7 @@ class Onboarding_Wizard {
 		$router = \Imagely\NGG\Util\Router::get_instance();
 
 		// TODO: Add minified js file and check nonces.
+		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.NotInFooter
 		wp_register_script(
 			'nextgen-gallery-onboarding-wizard',
 			plugins_url( 'assets/js/dist/onboarding-wizard.js', NGG_PLUGIN_FILE ),
@@ -198,7 +199,7 @@ class Onboarding_Wizard {
 			<title>
 				<?php
 				// translators: %s is the plugin name.
-				printf( esc_html__( '%1$s &rsaquo; Onboarding Wizard', 'nextgen-gallery' ), esc_html( 'Imagely' ) );
+				printf( esc_html__( '%1$s &rsaquo; Onboarding Wizard', 'nggallery' ), esc_html( 'Imagely' ) );
 				?>
 			</title>
 		</head>
@@ -384,7 +385,7 @@ class Onboarding_Wizard {
 			$onboarding_data = $this->sanitize_and_assign( '_user_type', 'sanitize_text_field', $onboarding_data );
 			$onboarding_data = $this->sanitize_and_assign( '_others', 'sanitize_text_field', $onboarding_data );
 
-			$stats_sent     = $onboarding_data['usage_stats_init'] ?? false;
+			$stats_sent     = isset( $onboarding_data['usage_stats_init'] ) ? $onboarding_data['usage_stats_init'] : false;
 			$usage_tracking = filter_var( $onboarding_data['_usage_tracking'], FILTER_VALIDATE_BOOLEAN );
 
 			if ( $usage_tracking && ! $stats_sent ) {

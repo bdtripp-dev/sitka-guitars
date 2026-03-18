@@ -12,14 +12,14 @@ use Imagely\NGG\Util\URL;
 class BlockManager {
 
 	/**
-	 * Instance of the BlockManager.
+	 * Instance cache.
 	 *
 	 * @var BlockManager|null
 	 */
 	protected static $instance = null;
 
 	/**
-	 * Get the instance of the BlockManager.
+	 * Gets the BlockManager instance.
 	 *
 	 * @return BlockManager
 	 */
@@ -38,6 +38,7 @@ class BlockManager {
 	public function register_hooks() {
 		add_action( 'init', [ $this, 'register_blocks' ] );
 		add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_post_thumbnails' ], 1 );
+		add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_gallery_conversion' ], 10 );
 		add_action( 'enqueue_block_assets', [ $this, 'ngg_enqueue_block_assets' ] );
 
 		// Adds NextGEN thumbnail support to all posts with 'thumbnail' support by adding a field for posts/pages to
@@ -87,7 +88,10 @@ class BlockManager {
 
 		// Register unified media block (Gallery + Album)
 		$media_block_asset_file = NGG_PLUGIN_DIR . '/static/IGW/Block/build/block-imagely-block.asset.php';
-		$media_block_asset      = file_exists( $media_block_asset_file ) ? include $media_block_asset_file : [ 'dependencies' => [], 'version' => NGG_SCRIPT_VERSION ];
+		$media_block_asset      = file_exists( $media_block_asset_file ) ? include $media_block_asset_file : [
+			'dependencies' => [],
+			'version'      => NGG_SCRIPT_VERSION,
+		];
 
 		\wp_register_script(
 			'imagely-main-block-simple-editor-script',
@@ -108,6 +112,13 @@ class BlockManager {
 		// Localize script with imagelyApp data
 		wp_localize_script( 'imagely-main-block-simple-editor-script', 'imagelyApp', $imagely_app_data );
 
+		// Load translations for the block script
+		wp_set_script_translations(
+			'imagely-main-block-simple-editor-script',
+			'nggallery',
+			NGG_PLUGIN_DIR . 'static/I18N'
+		);
+
 		// Add inline script for i18n
 		\wp_add_inline_script(
 			'imagely-main-block-simple-editor-script',
@@ -126,8 +137,8 @@ class BlockManager {
 		);
 
 		// Read block.json and register block
-		$media_block_json_file = NGG_PLUGIN_DIR . '/static/IGW/Block/build/block-imagely-block.block.json';
-		$media_metadata        = file_exists( $media_block_json_file ) ? json_decode( file_get_contents( $media_block_json_file ), true ) : [];
+		$media_block_json_file                   = NGG_PLUGIN_DIR . '/static/IGW/Block/build/block-imagely-block.block.json';
+		$media_metadata                          = file_exists( $media_block_json_file ) ? json_decode( file_get_contents( $media_block_json_file ), true ) : [];
 		$media_metadata['editor_script_handles'] = [ 'imagely-main-block-simple-editor-script' ];
 		$media_metadata['editor_style_handles']  = [ 'imagely-nextgen-gallery-editor-style', 'imagely-nextgen-block-styles' ];
 
@@ -136,7 +147,10 @@ class BlockManager {
 		// Register legacy block only for existing installations
 		if ( $this->is_existing_installation() ) {
 			$legacy_block_asset_file = NGG_PLUGIN_DIR . '/static/IGW/Block/build/block.asset.php';
-			$legacy_block_asset      = file_exists( $legacy_block_asset_file ) ? include $legacy_block_asset_file : [ 'dependencies' => [], 'version' => NGG_SCRIPT_VERSION ];
+			$legacy_block_asset      = file_exists( $legacy_block_asset_file ) ? include $legacy_block_asset_file : [
+				'dependencies' => [],
+				'version'      => NGG_SCRIPT_VERSION,
+			];
 
 			\wp_register_script(
 				'imagely-nextgen-gallery-legacy-editor-script',
@@ -163,8 +177,8 @@ class BlockManager {
 				'before'
 			);
 
-			$legacy_block_json_file = NGG_PLUGIN_DIR . '/static/IGW/Block/build/block.block.json';
-			$legacy_metadata        = file_exists( $legacy_block_json_file ) ? json_decode( file_get_contents( $legacy_block_json_file ), true ) : [];
+			$legacy_block_json_file                   = NGG_PLUGIN_DIR . '/static/IGW/Block/build/block.block.json';
+			$legacy_metadata                          = file_exists( $legacy_block_json_file ) ? json_decode( file_get_contents( $legacy_block_json_file ), true ) : [];
 			$legacy_metadata['editor_script_handles'] = [ 'imagely-nextgen-gallery-legacy-editor-script' ];
 			$legacy_metadata['editor_style_handles']  = [ 'imagely-nextgen-gallery-editor-style' ];
 
@@ -209,6 +223,7 @@ class BlockManager {
 	 * @return void
 	 */
 	public function set_or_remove_ngg_post_thumbnail( $post, $request ) {
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		$json   = @json_decode( $request->get_body() );
 		$target = null;
 
@@ -244,6 +259,56 @@ class BlockManager {
 	}
 
 	/**
+	 * Enqueue the gallery conversion script.
+	 *
+	 * This script extends the WordPress Gallery block with a "Convert to Imagely" button.
+	 *
+	 * @return void
+	 */
+	public function enqueue_gallery_conversion() {
+		$asset_file = NGG_PLUGIN_DIR . '/static/IGW/Block/build/gallery-conversion.asset.php';
+		$asset      = file_exists( $asset_file ) ? include $asset_file : [
+			'dependencies' => [],
+			'version'      => NGG_SCRIPT_VERSION,
+		];
+
+		\wp_enqueue_script(
+			'imagely-gallery-conversion',
+			StaticAssets::get_url( 'IGW/Block/build/gallery-conversion.min.js', 'photocrati-nextgen_block#build/gallery-conversion.min.js' ),
+			$asset['dependencies'],
+			$asset['version'],
+			true
+		);
+
+		// Localize script with conversion data.
+		\wp_localize_script(
+			'imagely-gallery-conversion',
+			'imagelyConvertData',
+			[
+				'convertApiUrl'       => '/imagely/v1/convert-gallery/single',
+				'convertRestNonce'    => \wp_create_nonce( 'wp_rest' ),
+				'postId'              => \get_the_ID(),
+				'panelTitle'          => \__( 'Imagely Gallery', 'nggallery' ),
+				'contentHeading'      => \__( 'Convert to Imagely', 'nggallery' ),
+				'contentDescription'  => \__( 'Convert this WordPress Gallery to an Imagely Gallery for more features and customization options.', 'nggallery' ),
+				'contentButtonText'   => \__( 'Convert to Imagely Gallery', 'nggallery' ),
+				'convertLoading'      => \__( 'Converting...', 'nggallery' ),
+				'confirmationMessage' => \__( 'Are you sure you want to convert this WordPress Gallery to an Imagely Gallery? This action cannot be undone.', 'nggallery' ),
+				'invalidBlockMessage' => \__( 'Invalid block. Please select a WordPress Gallery block.', 'nggallery' ),
+				'noImagesMessage'     => \__( 'No images found in the gallery. Please add images before converting.', 'nggallery' ),
+				'errorMessage'        => \__( 'An error occurred while converting the gallery.', 'nggallery' ),
+			]
+		);
+
+		// Load translations for the gallery conversion script.
+		\wp_set_script_translations(
+			'imagely-gallery-conversion',
+			'nggallery',
+			NGG_PLUGIN_DIR . 'static/I18N'
+		);
+	}
+
+	/**
 	 * Enqueue the post thumbnails.
 	 *
 	 * @return void
@@ -251,7 +316,10 @@ class BlockManager {
 	public function enqueue_post_thumbnails() {
 		// Load new TypeScript build from adminApp
 		$asset_file = NGG_PLUGIN_DIR . '/static/IGW/Block/build/post-thumbnail.asset.php';
-		$asset      = file_exists( $asset_file ) ? include $asset_file : [ 'dependencies' => [], 'version' => NGG_SCRIPT_VERSION ];
+		$asset      = file_exists( $asset_file ) ? include $asset_file : [
+			'dependencies' => [],
+			'version'      => NGG_SCRIPT_VERSION,
+		];
 
 		\wp_enqueue_script(
 			'ngg-post-thumbnails',
@@ -270,6 +338,13 @@ class BlockManager {
 				'imageRestUrl' => \rest_url( 'ngg/v1/admin/block/image/' ),
 				'restNonce'    => \wp_create_nonce( 'wp_rest' ),
 			]
+		);
+
+		// Load translations for the post-thumbnail script
+		\wp_set_script_translations(
+			'ngg-post-thumbnails',
+			'nggallery',
+			NGG_PLUGIN_DIR . 'static/I18N'
 		);
 	}
 }

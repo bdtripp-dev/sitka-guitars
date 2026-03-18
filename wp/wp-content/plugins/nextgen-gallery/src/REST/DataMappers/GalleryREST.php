@@ -17,11 +17,24 @@ use Imagely\NGG\DataMappers\DisplayType as DisplayTypeMapper;
 
 use Imagely\NGG\DataTypes\Gallery;
 use Imagely\NGG\Util\Security;
+use Imagely\NGG\Util\Transient;
 
 /**
  * Gallery REST API
  */
 class GalleryREST {
+	/**
+	 * Sanitize per_page parameter to allow -1 for "all"
+	 *
+	 * @param mixed $value The value to sanitize.
+	 * @return int
+	 */
+	public static function sanitize_per_page( $value ) {
+		$int_value = (int) $value;
+		// Allow -1 for "all", otherwise ensure positive
+		return ( -1 === $int_value ) ? -1 : absint( $int_value );
+	}
+
 	/**
 	 * Register the REST API routes
 	 */
@@ -57,12 +70,12 @@ class GalleryREST {
 					'per_page'          => [
 						'type'              => 'integer',
 						'default'           => 25,
-						'sanitize_callback' => 'absint',
+						'sanitize_callback' => [ self::class, 'sanitize_per_page' ],
 					],
 					'page'              => [
 						'type'              => 'integer',
 						'default'           => 1,
-						'sanitize_callback' => 'absint',
+						'sanitize_callback' => 'absint', // Keep absint for page (always positive)
 					],
 					'ecommerce_filter'  => [
 						'type'              => 'string',
@@ -96,6 +109,32 @@ class GalleryREST {
 						'required'          => true,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
+					],
+				],
+			]
+		);
+
+		// Get multiple galleries by IDs (batch endpoint for performance).
+		register_rest_route(
+			'imagely/v1',
+			'/galleries/batch',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ self::class, 'get_galleries_batch' ],
+				'permission_callback' => [ self::class, 'check_read_permission' ],
+				'args'                => [
+					'ids' => [
+						'required'          => true,
+						'type'              => 'array',
+						'items'             => [
+							'type' => 'integer',
+						],
+						'sanitize_callback' => function ( $value ) {
+							if ( ! is_array( $value ) ) {
+								return [];
+							}
+							return array_map( 'absint', array_filter( $value ) );
+						},
 					],
 				],
 			]
@@ -192,6 +231,10 @@ class GalleryREST {
 					'display_type_settings' => [
 						'type'              => 'object',
 						'sanitize_callback' => [ self::class, 'sanitize_display_type_settings' ],
+					],
+					'external_source'       => [
+						'type'              => 'object',
+						'sanitize_callback' => [ self::class, 'sanitize_external_source' ],
 					],
 					'is_private'            => [
 						'type'              => 'integer',
@@ -311,13 +354,39 @@ class GalleryREST {
 		$order   = strtoupper( $request->get_param( 'order' ) ?? 'ASC' );
 
 		// Get pagination parameters.
-		$per_page = $request->get_param( 'per_page' );
+		$per_page_param = (int) $request->get_param( 'per_page' );
+		// Normalize all negative values to -1 (treated as "all") for consistency.
+		if ( $per_page_param < 0 ) {
+			$per_page_param = -1;
+		}
+		// Handle -1 as "all" (WordPress standard for unlimited pagination)
+		$per_page = ( -1 === $per_page_param ) ? PHP_INT_MAX : $per_page_param;
 		$page     = $request->get_param( 'page' );
 		$offset   = ( $page - 1 ) * $per_page;
 
 		// Build filter conditions from request.
 		$filters = self::build_filter_conditions( $request );
 
+		$cache_params  = [
+			get_current_user_id(),
+			$orderby,
+			$order,
+			$per_page_param,
+			$page,
+			$request->get_param( 'ecommerce_filter' ),
+			$request->get_param( 'is_private_filter' ),
+			$request->get_param( 'search' ),
+		];
+		$cache_key     = Transient::create_key( 'rest_galleries', $cache_params );
+		$cached_result = Transient::fetch( $cache_key, false );
+		if ( $cached_result ) {
+			// Normalize objects → arrays for REST response
+			$response = json_decode( wp_json_encode( $cached_result['response'] ?? [] ), true );
+			$result   = new WP_REST_Response( $response, 200 );
+			$result->header( 'X-WP-Total', $cached_result['total_items'] ?? 0 );
+			$result->header( 'X-WP-TotalPages', $cached_result['total_pages'] ?? 0 );
+			return $result;
+		}
 		// Build the base query and apply filters.
 		$query = $mapper->select();
 
@@ -338,7 +407,7 @@ class GalleryREST {
 			$sql = $wpdb->prepare( $sql, $filters['params'] );
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
 		$total_items = (int) $wpdb->get_var( $sql );
 
 		// Fetch current page of items.
@@ -352,10 +421,16 @@ class GalleryREST {
 			$response[] = self::prepare_gallery_list_item_for_response( $gallery );
 		}
 
+		$total_pages = ceil( $total_items / $per_page );
+		$cache_data  = [
+			'response'    => $response,
+			'total_items' => $total_items,
+			'total_pages' => $total_pages,
+		];
+		Transient::update( $cache_key, $cache_data );
 		$result = new WP_REST_Response( $response, 200 );
 
 		// Add pagination headers.
-		$total_pages = ceil( $total_items / $per_page );
 		$result->header( 'X-WP-Total', $total_items );
 		$result->header( 'X-WP-TotalPages', $total_pages );
 
@@ -401,7 +476,7 @@ class GalleryREST {
 		}
 
 		if ( $request->has_param( 'search' ) ) {
-			$search_term         = $request->get_param( 'search' );
+			$search_term          = $request->get_param( 'search' );
 			$search_term_wildcard = '%' . $search_term . '%';
 
 			$conditions[]    = [ 'title LIKE %s', $search_term_wildcard ];
@@ -453,6 +528,59 @@ class GalleryREST {
 	}
 
 	/**
+	 * Get multiple galleries by IDs in a single batch request (performance optimization)
+	 *
+	 * @param WP_REST_Request $request The REST request object containing array of gallery IDs.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_galleries_batch( WP_REST_Request $request ) {
+		$ids = $request->get_param( 'ids' );
+
+		if ( empty( $ids ) || ! is_array( $ids ) ) {
+			return new WP_Error(
+				'invalid_ids',
+				__( 'Invalid gallery IDs provided', 'nggallery' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		// Limit batch size to prevent abuse (max 100 galleries per request)
+		if ( count( $ids ) > 100 ) {
+			return new WP_Error(
+				'batch_too_large',
+				__( 'Maximum 100 galleries can be requested at once', 'nggallery' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$mapper          = GalleryMapper::get_instance();
+		$current_user_id = get_current_user_id();
+		$can_edit_all    = Security::is_allowed( 'nextgen_edit_gallery_unowned' );
+
+		$galleries = [];
+		foreach ( $ids as $id ) {
+			$gallery = $mapper->find( $id );
+
+			if ( ! $gallery ) {
+				// Skip galleries that don't exist instead of failing entire request
+				continue;
+			}
+
+			// Check permissions for each gallery
+			$can_manage = ( (int) $current_user_id === (int) $gallery->author ) || $can_edit_all;
+
+			if ( ! $can_manage ) {
+				// Skip galleries user doesn't have permission to view
+				continue;
+			}
+
+			$galleries[] = self::prepare_gallery_for_response( $gallery );
+		}
+
+		return new WP_REST_Response( $galleries, 200 );
+	}
+
+	/**
 	 * Create a new gallery
 	 *
 	 * @param WP_REST_Request $request Optional. The REST request object.
@@ -470,6 +598,7 @@ class GalleryREST {
 
 		try {
 			$mapper->save( $gallery );
+			Transient::flush( 'rest_galleries' );
 			return new WP_REST_Response(
 				self::prepare_gallery_for_response( $gallery ),
 				201
@@ -547,6 +676,9 @@ class GalleryREST {
 		if ( $request->has_param( 'display_type_settings' ) ) {
 			$gallery->display_type_settings = $request->get_param( 'display_type_settings' );
 		}
+		if ( $request->has_param( 'external_source' ) ) {
+			$gallery->external_source = $request->get_param( 'external_source' );
+		}
 		if ( $request->has_param( 'is_private' ) ) {
 			$gallery->is_private = (bool) $request->get_param( 'is_private' );
 		}
@@ -556,6 +688,7 @@ class GalleryREST {
 
 		try {
 			$mapper->save( $gallery );
+			Transient::flush( 'rest_galleries' );
 			return new WP_REST_Response(
 				[
 					'gallery' => self::prepare_gallery_for_response( $gallery ),
@@ -593,7 +726,8 @@ class GalleryREST {
 		}
 
 		try {
-			$mapper->destroy( $gallery );
+			$mapper->destroy( $gallery, true );
+			Transient::flush( 'rest_galleries' );
 			return new WP_REST_Response(
 				[
 					'message' => __( 'Gallery deleted successfully', 'nggallery' ),
@@ -813,7 +947,7 @@ class GalleryREST {
 	private static function prepare_gallery_list_item_for_response( $gallery ) {
 		global $wpdb;
 
-		// phpcs:ignore
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$gallery->counter = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->nggpictures} WHERE galleryid = %d",
@@ -861,7 +995,7 @@ class GalleryREST {
 			$thumbnail = $storage->get_image_url( $gallery->previewpic, 'thumb' );
 		}
 
-		// phpcs:ignore
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$gallery->counter = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->nggpictures} WHERE galleryid = %d",
@@ -881,13 +1015,14 @@ class GalleryREST {
 			'slug'                  => $gallery->slug,
 			'extras_post_id'        => $gallery->extras_post_id,
 			'parent_id'             => $gallery->parent_id ?? null,
-			'pricelist_id'          => $gallery->pricelist_id,
+			'pricelist_id'          => $gallery->pricelist_id ?? null,
 			'counter'               => $gallery->counter ?? 0,
 			'previewpic_url'        => $thumbnail ?? '',
 			'display_type'          => $gallery->display_type ?? 'photocrati-nextgen_basic_thumbnails',
-			'display_type_settings' => $gallery->display_type_settings,
-			'is_private'            => (bool) $gallery->is_private,
-			'is_ecommerce_enabled'  => $gallery->is_ecommerce_enabled,
+			'display_type_settings' => $gallery->display_type_settings ?? [],
+			'external_source'       => $gallery->external_source ?? [],
+			'is_private'            => (bool) ( $gallery->is_private ?? false ),
+			'is_ecommerce_enabled'  => $gallery->is_ecommerce_enabled ?? false,
 			'date_created'          => $gallery->date_created,
 			'date_modified'         => $gallery->date_modified,
 		];
@@ -937,6 +1072,45 @@ class GalleryREST {
 				}
 			}
 			$sanitized[ $display_type ] = $sanitized_type_settings;
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Sanitize external source settings.
+	 *
+	 * @param array $settings The settings to sanitize.
+	 * @return array
+	 */
+	public static function sanitize_external_source( $settings ) {
+		if ( ! is_array( $settings ) ) {
+			return [];
+		}
+
+		$sanitized = [];
+		foreach ( $settings as $key => $value ) {
+			$key = sanitize_text_field( $key );
+
+			switch ( gettype( $value ) ) {
+				case 'boolean':
+					$sanitized[ $key ] = (bool) $value;
+					break;
+				case 'integer':
+					$sanitized[ $key ] = (int) $value;
+					break;
+				case 'double':
+					$sanitized[ $key ] = (float) $value;
+					break;
+				case 'string':
+					$sanitized[ $key ] = wp_kses_post( $value );
+					break;
+				case 'array':
+					$sanitized[ $key ] = array_map( 'sanitize_text_field', $value );
+					break;
+				default:
+					$sanitized[ $key ] = null;
+			}
 		}
 
 		return $sanitized;

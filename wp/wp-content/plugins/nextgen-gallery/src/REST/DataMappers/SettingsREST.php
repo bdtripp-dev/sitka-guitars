@@ -137,6 +137,17 @@ class SettingsREST {
 				'permission_callback' => [ self::class, 'check_edit_permission' ],
 			]
 		);
+
+		// Get system information.
+		register_rest_route(
+			'imagely/v1',
+			'/system-info',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ self::class, 'get_system_info' ],
+				'permission_callback' => [ self::class, 'check_read_permission' ],
+			]
+		);
 	}
 
 	/**
@@ -461,10 +472,11 @@ class SettingsREST {
 			}
 
 			// Allow either absolute URLs, absolute filesystem paths, or server-relative paths.
-			$is_url   = is_string( $wm_path ) && preg_match( '/^https?:\/\//i', $wm_path );
-			$is_abs   = is_string( $wm_path ) && ( 0 === strpos( $wm_path, '/' ) || preg_match( '/^[A-Za-z]:[\\\/]*/', $wm_path ) );
+			$is_url = is_string( $wm_path ) && preg_match( '/^https?:\/\//i', $wm_path );
+			$is_abs = is_string( $wm_path ) && ( 0 === strpos( $wm_path, '/' ) || preg_match( '/^[A-Za-z]:[\\\/]*/', $wm_path ) );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf -- URL case has no file check.
 			if ( $is_url ) {
-				// URL will be downloaded later; no file_exists check here
+				// URL will be downloaded later; no file_exists check here.
 			} elseif ( $is_abs ) {
 				// Absolute filesystem path must exist
 				if ( ! file_exists( $wm_path ) ) {
@@ -536,16 +548,16 @@ class SettingsREST {
 				$is_abs = is_string( $final_wm_path ) && ( 0 === strpos( $final_wm_path, '/' ) || preg_match( '/^[A-Za-z]:[\\\/]*/', $final_wm_path ) );
 				if ( $is_url ) {
 					// Download remote watermark image to uploads folder for preview use
-					$upload_dir = wp_upload_dir();
+					$upload_dir  = wp_upload_dir();
 					$preview_dir = trailingslashit( $upload_dir['basedir'] ) . 'ngg-watermark-previews/';
 					if ( ! is_dir( $preview_dir ) ) {
 						wp_mkdir_p( $preview_dir );
 					}
 
-					$ext       = pathinfo( parse_url( $final_wm_path, PHP_URL_PATH ), PATHINFO_EXTENSION );
-					$ext       = $ext ? $ext : 'png';
-					$tmp_name  = 'wm_' . uniqid( '', true ) . '.' . $ext;
-					$tmp_path  = $preview_dir . $tmp_name;
+					$ext      = pathinfo( wp_parse_url( $final_wm_path, PHP_URL_PATH ), PATHINFO_EXTENSION );
+					$ext      = $ext ? $ext : 'png';
+					$tmp_name = 'wm_' . uniqid( '', true ) . '.' . $ext;
+					$tmp_path = $preview_dir . $tmp_name;
 
 					$response = wp_remote_get( $final_wm_path, [ 'timeout' => 15 ] );
 					if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200 ) {
@@ -565,7 +577,7 @@ class SettingsREST {
 					}
 
 					// Write file to disk
-					file_put_contents( $tmp_path, $body );
+					file_put_contents( $tmp_path, $body ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 					if ( ! file_exists( $tmp_path ) ) {
 						return new WP_Error(
 							'invalid_watermark_image',
@@ -575,16 +587,16 @@ class SettingsREST {
 					}
 
 					// Convert absolute path to path relative to ABSPATH as expected by downstream logic
-					$relative = ltrim( str_replace( ABSPATH, '/', $tmp_path ), '/' );
-					$final_wm_path   = $relative;
-					$downloaded_tmp  = true;
+					$relative          = ltrim( str_replace( ABSPATH, '/', $tmp_path ), '/' );
+					$final_wm_path     = $relative;
+					$downloaded_tmp    = true;
 					$tmp_download_path = $tmp_path;
 				} elseif ( $is_abs ) {
 					// If absolute and under ABSPATH, convert to server-relative; otherwise copy into previews dir
 					if ( 0 === strpos( $final_wm_path, ABSPATH ) ) {
 						$final_wm_path = ltrim( str_replace( ABSPATH, '/', $final_wm_path ), '/' );
 					} else {
-						$upload_dir = wp_upload_dir();
+						$upload_dir  = wp_upload_dir();
 						$preview_dir = trailingslashit( $upload_dir['basedir'] ) . 'ngg-watermark-previews/';
 						if ( ! is_dir( $preview_dir ) ) {
 							wp_mkdir_p( $preview_dir );
@@ -593,6 +605,7 @@ class SettingsREST {
 						$ext      = $ext ? $ext : 'png';
 						$tmp_name = 'wm_' . uniqid( '', true ) . '.' . $ext;
 						$tmp_path = $preview_dir . $tmp_name;
+						// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 						if ( ! @copy( $final_wm_path, $tmp_path ) ) {
 							return new WP_Error(
 								'invalid_watermark_image',
@@ -641,7 +654,7 @@ class SettingsREST {
 					$preview_url_with_timestamp = $preview_url . '?' . time();
 					// Cleanup temporary download, if any
 					if ( ! empty( $downloaded_tmp ) && $tmp_download_path && file_exists( $tmp_download_path ) ) {
-						@unlink( $tmp_download_path );
+						@unlink( $tmp_download_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.PHP.NoSilencedErrors.Discouraged
 					}
 
 					return new WP_REST_Response(
@@ -664,7 +677,7 @@ class SettingsREST {
 		} catch ( \Exception $e ) {
 			// Cleanup on error as well
 			if ( ! empty( $downloaded_tmp ) && $tmp_download_path && file_exists( $tmp_download_path ) ) {
-				@unlink( $tmp_download_path );
+				@unlink( $tmp_download_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.PHP.NoSilencedErrors.Discouraged
 			}
 			return new WP_Error(
 				'preview_error',
@@ -772,7 +785,9 @@ class SettingsREST {
 
 		// Remove duplicate display types and lightboxes from database
 		// (fixes issues from 1.9x to 2.0x upgrades)
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->posts} WHERE post_type = %s", 'display_type' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->posts} WHERE post_type = %s", 'lightbox_library' ) );
 
 		// Trigger reinstallation by making a request to plugins.php
@@ -831,7 +846,9 @@ class SettingsREST {
 		$settings->destroy();
 
 		// Remove duplicate display types and lightboxes from database
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->posts} WHERE post_type = %s", 'display_type' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->posts} WHERE post_type = %s", 'lightbox_library' ) );
 
 		// Trigger reinstallation
@@ -898,7 +915,9 @@ class SettingsREST {
 
 			// Clear WordPress transients
 			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_ngg_%'" );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_ngg_%'" );
 
 			// Clear NextGen specific transients
@@ -1006,5 +1025,24 @@ class SettingsREST {
 				[ 'status' => 500 ]
 			);
 		}
+	}
+
+	/**
+	 * Get system information
+	 *
+	 * @return WP_REST_Response System information
+	 */
+	public static function get_system_info() {
+		// Use the existing method from Admin\App class
+		if ( class_exists( '\Imagely\NGG\Admin\App' ) ) {
+			$system_info = \Imagely\NGG\Admin\App::get_system_info();
+			return new WP_REST_Response( $system_info, 200 );
+		}
+
+		return new WP_Error(
+			'system_info_unavailable',
+			__( 'System information is not available', 'nggallery' ),
+			[ 'status' => 500 ]
+		);
 	}
 }

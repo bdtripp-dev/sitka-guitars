@@ -13,6 +13,7 @@ use WP_Error;
 use Imagely\NGG\DataMappers\Image as ImageMapper;
 use Imagely\NGG\DataTypes\Image;
 use Imagely\NGG\Util\Security;
+use Imagely\NGG\Util\Transient;
 
 /**
  * Class ImageREST
@@ -36,6 +37,35 @@ class ImageREST {
 					'gallery_id' => [
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
+					],
+					'per_page'   => [
+						'type'              => 'integer',
+						'default'           => 100,
+						'sanitize_callback' => function ( $value ) {
+							// Allow -1 for "all images", otherwise ensure minimum of 1
+							$int_value = (int) $value;
+							if ( $int_value < 0 ) {
+								return -1; // Normalize to -1 for "all"
+							}
+							return max( 1, $int_value );
+						},
+					],
+					'page'       => [
+						'type'              => 'integer',
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					],
+					'orderby'    => [
+						'type'              => 'string',
+						'enum'              => [ 'sortorder', 'pid', 'filename', 'imagedate' ],
+						'default'           => 'sortorder',
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'order'      => [
+						'type'              => 'string',
+						'enum'              => [ 'ASC', 'DESC' ],
+						'default'           => 'ASC',
+						'sanitize_callback' => 'sanitize_text_field',
 					],
 				],
 			]
@@ -68,37 +98,37 @@ class ImageREST {
 				'callback'            => [ self::class, 'update_image' ],
 				'permission_callback' => [ self::class, 'check_edit_permission' ],
 				'args'                => [
-					'id'          => [
+					'id'           => [
 						'required'          => true,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 					],
-					'alttext'     => [
+					'alttext'      => [
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					],
-					'description' => [
+					'description'  => [
 						'type'              => 'string',
 						'sanitize_callback' => 'wp_kses_post',
 					],
-					'exclude'     => [
+					'exclude'      => [
 						'type' => 'boolean',
 					],
-					'image_slug'  => [
+					'image_slug'   => [
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_title',
 					],
-					'sortorder'   => [
+					'sortorder'    => [
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 					],
-					'tags'        => [
+					'tags'         => [
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					],
 					'pricelist_id' => [
 						'type'              => 'integer',
-						'sanitize_callback' => function( $value ) {
+						'sanitize_callback' => function ( $value ) {
 							// Allow -1 for "not for sale", 0 for "use gallery pricelist", positive integers for actual pricelists
 							$int_value = (int) $value;
 							return ( $int_value === -1 || $int_value >= 0 ) ? $int_value : 0;
@@ -142,30 +172,30 @@ class ImageREST {
 						'items'    => [
 							'type'       => 'object',
 							'properties' => [
-								'id'          => [
+								'id'           => [
 									'required' => true,
 									'type'     => 'integer',
 								],
-								'alttext'     => [
+								'alttext'      => [
 									'type' => 'string',
 								],
-								'description' => [
+								'description'  => [
 									'type' => 'string',
 								],
-								'exclude'     => [
+								'exclude'      => [
 									'type' => 'boolean',
 								],
-								'image_slug'  => [
+								'image_slug'   => [
 									'type' => 'string',
 								],
-								'sortorder'   => [
+								'sortorder'    => [
 									'type' => 'integer',
 								],
-								'tags'        => [
+								'tags'         => [
 									'type' => 'string',
 								],
 								'pricelist_id' => [
-									'type' => 'integer',
+									'type'        => 'integer',
 									'description' => 'Pricelist ID for ecommerce functionality',
 								],
 							],
@@ -300,25 +330,67 @@ class ImageREST {
 	}
 
 	/**
-	 * Get all images with optional filtering.
+	 * Get all images with optional filtering and pagination.
 	 *
-	 * @param WP_REST_Request $request The request object containing gallery_id parameter.
+	 * @param WP_REST_Request $request The request object containing gallery_id, per_page, page, orderby, order parameters.
 	 * @return WP_REST_Response
 	 */
 	public static function get_images( WP_REST_Request $request ) {
+		global $wpdb;
 		$gallery_id = $request->get_param( 'gallery_id' );
 
+		// Get pagination parameters
+		$per_page_param = (int) $request->get_param( 'per_page' );
+		// Normalize all negative values to -1 (treated as "all") for consistency
+		if ( $per_page_param < 0 ) {
+			$per_page_param = -1;
+		}
+		// Handle -1 as "all" (WordPress standard for unlimited pagination)
+		$per_page = ( -1 === $per_page_param ) ? PHP_INT_MAX : $per_page_param;
+		$page     = max( 1, (int) $request->get_param( 'page' ) );
+		$offset   = ( $page - 1 ) * $per_page;
+
+		// Get ordering parameters
+		$orderby = $request->get_param( 'orderby' ) ?? 'sortorder';
+		$order   = strtoupper( $request->get_param( 'order' ) ?? 'ASC' );
+
 		$mapper = ImageMapper::get_instance();
-		$mapper->select();
+		$query  = $mapper->select();
 
 		if ( $gallery_id ) {
-			$mapper->where( [ 'galleryid = %d', $gallery_id ] );
+			$query->where( [ 'galleryid = %d', $gallery_id ] );
 		}
 
-		$images      = $mapper->run_query();
+		// Calculate total items for pagination
+		$count_query = $mapper->select();
+		if ( $gallery_id ) {
+			$count_query->where( [ 'galleryid = %d', $gallery_id ] );
+		}
+		$total_items = count( $count_query->run_query( false, false, true ) );
+
+		// Add ordering and pagination
+		$query->order_by( $orderby, $order );
+		if ( -1 !== $per_page_param ) {
+			$query->limit( $per_page, $offset );
+		}
+
+		$images      = $query->run_query();
 		$images_data = array_map( [ self::class, 'prepare_image_for_response' ], $images );
 
-		return new WP_REST_Response( $images_data );
+		$response = new WP_REST_Response( $images_data );
+
+		// Add pagination headers
+		if ( -1 !== $per_page_param ) {
+			$total_pages = ceil( $total_items / $per_page );
+			$response->header( 'X-WP-Total', $total_items );
+			$response->header( 'X-WP-TotalPages', $total_pages );
+		} else {
+			// When returning all items, set total pages to 1
+			$response->header( 'X-WP-Total', $total_items );
+			$response->header( 'X-WP-TotalPages', 1 );
+		}
+
+		return $response;
 	}
 
 	/**
@@ -413,10 +485,31 @@ class ImageREST {
 		$gallery_id = $image->galleryid;
 
 		try {
-			$mapper->destroy( $image );
+			// Fire the action hook for other plugins to respond to image deletion
+			// This must be called BEFORE any deletion so that listening plugins can access the database record
+			do_action( 'ngg_delete_picture', $image_id, $image );
+
+			// Check if we should delete image files from filesystem
+			$settings = \Imagely\NGG\Settings\Settings::get_instance();
+			$storage  = \Imagely\NGG\DataStorage\Manager::get_instance();
+
+			if ( $settings->get( 'deleteImg' ) ) {
+				// Delete image files from filesystem and database
+				$delete_success = $storage->delete_image( $image );
+				if ( ! $delete_success ) {
+					return new WP_Error(
+						'delete_files_failed',
+						__( 'Could not delete image file(s) from disk', 'nggallery' ),
+						[ 'status' => 500 ]
+					);
+				}
+			} else {
+				// Only remove from database, keep files on disk
+				$mapper->destroy( $image );
+			}
 
 			// Check if the deleted image was the gallery's preview image
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$gallery_preview = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT previewpic FROM {$wpdb->nggallery} WHERE gid = %d AND previewpic = %d",
@@ -427,7 +520,7 @@ class ImageREST {
 
 			// If this was the preview image, update the gallery to use the first available image
 			if ( $gallery_preview ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 				$first_image_id = $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT pid FROM {$wpdb->nggpictures} WHERE galleryid = %d ORDER BY sortorder ASC, pid ASC LIMIT 1",
@@ -446,11 +539,13 @@ class ImageREST {
 				);
 			}
 
+			Transient::flush( 'rest_galleries' );
 			return new WP_REST_Response(
 				[
-					'message' => __( 'Image deleted successfully', 'nggallery' ),
-					'deleted' => true,
-					'id'      => $image_id,
+					'message'       => __( 'Image deleted successfully', 'nggallery' ),
+					'deleted'       => true,
+					'id'            => $image_id,
+					'files_deleted' => (bool) $settings->get( 'deleteImg' ),
 				]
 			);
 		} catch ( \Exception $e ) {
@@ -540,6 +635,12 @@ class ImageREST {
 	 * @return WP_REST_Response
 	 */
 	public static function import_media_library( WP_REST_Request $request ) {
+		// Image imports can require significant memory for decoding/resizing.
+		// In REST requests, WordPress may still be running at WP_MEMORY_LIMIT (often low).
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			\wp_raise_memory_limit( 'image' );
+		}
+
 		$retval          = [];
 		$created_gallery = false;
 		$gallery_id      = (int) $request->get_param( 'gallery_id' );
@@ -581,6 +682,7 @@ class ImageREST {
 				);
 			}
 		}
+		Transient::flush( 'rest_galleries' );
 
 		$retval['gallery_id'] = $gallery_id;
 		$storage              = \Imagely\NGG\DataStorage\Manager::get_instance();
@@ -661,6 +763,12 @@ class ImageREST {
 	 * @return WP_REST_Response
 	 */
 	public static function upload_image( WP_REST_Request $request ) {
+		// Image uploads can require significant memory for decoding/resizing.
+		// In REST requests, WordPress may still be running at WP_MEMORY_LIMIT (often low).
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			\wp_raise_memory_limit( 'image' );
+		}
+
 		$created_gallery = false;
 		$gallery_id      = (int) $request->get_param( 'gallery_id' );
 		$gallery_name    = $request->get_param( 'gallery_name' );
@@ -744,7 +852,44 @@ class ImageREST {
 		}
 
 		$status = ! empty( $retval['error'] ) ? 500 : 200;
+		if ( $status === 200 ) {
+			Transient::flush( 'rest_galleries' );
+		}
 		return new WP_REST_Response( $retval, $status );
+	}
+
+	/**
+	 * Returns the absolute root path allowed for folder browsing and importing.
+	 *
+	 * On single-site this is NGG_IMPORT_ROOT (wp-content by default).
+	 * On multisite subsites the path is validated against the current blog's
+	 * upload directory so that one subsite cannot reach another's files.
+	 *
+	 * @return string | \WP_Error
+	 */
+	private static function get_import_root() {
+		$root = is_multisite()
+			? \Imagely\NGG\DataStorage\Manager::get_instance()->get_upload_abspath()
+			: NGG_IMPORT_ROOT;
+		$root = str_replace( '/', DIRECTORY_SEPARATOR, $root );
+		$root = untrailingslashit( $root );
+
+		if ( is_multisite() && ! is_main_site() ) {
+			$upload_dir       = wp_upload_dir();
+			$blog_upload_base = trailingslashit( wp_normalize_path( realpath( $upload_dir['basedir'] ) ?: $upload_dir['basedir'] ) );
+			$resolved_root    = wp_normalize_path( realpath( $root ) ?: $root );
+			$normalized_root  = trailingslashit( $resolved_root );
+
+			if ( strpos( $normalized_root, $blog_upload_base ) !== 0 ) {
+				return new \WP_Error(
+					'invalid_gallery_path',
+					__( 'Access denied. You can only browse your own upload directory.', 'nggallery' ),
+					[ 'status' => 403 ]
+				);
+			}
+		}
+
+		return $root;
 	}
 
 	/**
@@ -754,14 +899,13 @@ class ImageREST {
 	 * @return WP_REST_Response
 	 */
 	public static function browse_folder( WP_REST_Request $request ) {
-		$retval       = [];
-				$dir  = $request->get_param( 'dir' );
-				$root = is_multisite()
-			? \Imagely\NGG\DataStorage\Manager::get_instance()->get_upload_abspath()
-			: NGG_IMPORT_ROOT;
-		$root         = str_replace( '/', DIRECTORY_SEPARATOR, $root );
-		$root         = untrailingslashit( $root );
-		$browse_path  = $root;
+		$retval = [];
+		$dir    = $request->get_param( 'dir' );
+		$root   = self::get_import_root();
+		if ( is_wp_error( $root ) ) {
+			return new WP_REST_Response( [ 'error' => $root->get_error_message() ], 403 );
+		}
+		$browse_path = $root;
 		if ( ! empty( $dir ) ) {
 			$browse_path = $root . DIRECTORY_SEPARATOR . ltrim( $dir, DIRECTORY_SEPARATOR );
 		}
@@ -833,11 +977,12 @@ class ImageREST {
 			$gallery_title = null;
 		}
 
-		$root        = is_multisite()
-			? \Imagely\NGG\DataStorage\Manager::get_instance()->get_upload_abspath()
-			: NGG_IMPORT_ROOT;
-		$root        = str_replace( '/', DIRECTORY_SEPARATOR, $root );
-		$root        = untrailingslashit( $root );
+		$root = self::get_import_root();
+
+		if ( is_wp_error( $root ) ) {
+			return new WP_REST_Response( [ 'error' => $root->get_error_message() ], 403 );
+		}
+
 		$import_path = str_replace( '//', DIRECTORY_SEPARATOR, path_join( $root, $folder ) );
 
 		// First check if the path exists and is accessible.
@@ -934,6 +1079,7 @@ class ImageREST {
 				500
 			);
 		}
+		Transient::flush( 'rest_galleries' );
 
 		return new WP_REST_Response( $retval, 200 );
 	}
@@ -956,8 +1102,9 @@ class ImageREST {
 		// If Orientation is missing from stored metadata, try to get it from live EXIF
 		if ( ! isset( $meta_data['Orientation'] ) || empty( $meta_data['Orientation'] ) ) {
 			require_once NGGALLERY_ABSPATH . '/lib/meta.php';
-			$meta = new \nggMeta( $image );
-			if ( $orientation = $meta->get_EXIF( 'Orientation' ) ) {
+			$meta        = new \nggMeta( $image );
+			$orientation = $meta->get_EXIF( 'Orientation' );
+			if ( $orientation ) {
 				$meta_data['Orientation'] = $orientation;
 			}
 		}
@@ -998,7 +1145,7 @@ class ImageREST {
 	private static function set_gallery_preview_if_empty( $gallery_id, $image_id ) {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$current_preview = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT previewpic FROM {$wpdb->nggallery} WHERE gid = %d",
