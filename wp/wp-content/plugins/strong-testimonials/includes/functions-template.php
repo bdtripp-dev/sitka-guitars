@@ -333,6 +333,9 @@ function wpmtst_the_custom_field( $field ) {
 	if ( isset( $field['prop']['action_output'] ) && $field['prop']['action_output'] ) {
 		$value  = get_post_meta( $post->ID, $field_name, true );
 		$output = apply_filters( $field['prop']['action_output'], $field, $value );
+	} elseif ( has_filter( 'wpmtst_output_' . $field_name ) ) {
+		$value  = get_post_meta( $post->ID, $field_name, true );
+		$output = apply_filters( 'wpmtst_output_' . $field_name, $field, $value );
 	} else {
 		switch ( $field['type'] ) {
 			case 'link':
@@ -548,12 +551,15 @@ function wpmtst_container_class() {
 
 function wpmtst_container_data() {
 	$data_array = apply_filters( 'wpmtst_container_data', WPMST()->atts( 'container_data' ) );
-	if ( $data_array ) {
-		$data = '';
+	if ( $data_array && is_array( $data_array ) ) {
+		$parts = array();
 		foreach ( $data_array as $attr => $value ) {
-			$data .= " data-$attr=$value";
+			$attr    = sanitize_key( $attr );
+			$value   = esc_attr( (string) $value );
+			$parts[] = sprintf( ' data-%s="%s"', $attr, $value );
 		}
-		echo esc_attr( $data );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each part built from sanitize_key and esc_attr.
+		echo implode( '', $parts );
 	}
 }
 

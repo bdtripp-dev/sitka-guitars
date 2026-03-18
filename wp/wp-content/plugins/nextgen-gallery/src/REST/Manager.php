@@ -11,6 +11,7 @@ namespace Imagely\NGG\REST;
 use Imagely\NGG\REST\Admin\AttachToPost;
 use Imagely\NGG\REST\Admin\Block;
 use Imagely\NGG\REST\Admin\RolesCapabilities;
+use Imagely\NGG\REST\DataMappers\AddonsREST;
 use Imagely\NGG\REST\DataMappers\AlbumREST;
 use Imagely\NGG\REST\DataMappers\DisplayTypeREST;
 use Imagely\NGG\REST\DataMappers\SettingsREST;
@@ -21,14 +22,17 @@ use Imagely\NGG\REST\DataMappers\LicenseREST;
 use Imagely\NGG\REST\DataMappers\NotificationsREST;
 use Imagely\NGG\REST\DataMappers\PluginManagementREST;
 use Imagely\NGG\REST\DataMappers\TagREST;
+use Imagely\NGG\REST\ConvertGallery\ConvertGalleryREST;
 
 /**
- * REST API Manager
+ * REST API Manager for NextGEN Gallery.
+ *
+ * Manages REST API endpoints and routing for NextGEN Gallery.
  */
 class Manager {
 
 	/**
-	 * Register the REST API routes
+	 * Initializes REST API routes and endpoints.
 	 */
 	public static function rest_api_init() {
 		$block = new Block();
@@ -41,6 +45,7 @@ class Manager {
 		$roles_capabilities->register_routes();
 
 		// Register the DataMappers REST endpoints.
+		AddonsREST::register_routes();
 		GalleryREST::register_routes();
 		AlbumREST::register_routes();
 		ImageREST::register_routes();
@@ -57,5 +62,8 @@ class Manager {
 
 		$license = new LicenseREST();
 		$license->register_routes();
+
+		// Register the Convert Gallery REST endpoints.
+		ConvertGalleryREST::register_routes();
 	}
 }

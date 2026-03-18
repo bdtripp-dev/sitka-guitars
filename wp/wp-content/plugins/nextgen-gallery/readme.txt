@@ -2,10 +2,10 @@
 Contributors: photocrati, imagely
 Tags: gallery, wordpress gallery plugin, photo gallery, image gallery, slideshow
 Requires at least: 5.5.4
-Stable tag: 4.0.3
+Stable tag: 4.1.1
 Tested up to: 6.9
 License: GPLv3
-Requires PHP: 7.0
+Requires PHP: 7.4
 
 The most popular gallery plugin that lets you create galleries and albums in seconds.
 
@@ -196,6 +196,43 @@ For more information, feel free to visit the official website for the NextGEN Ga
 
 
 == Changelog ==
+
+= 4.1.1 - 03.13.2025 =
+* Fixed: PNG and WEBP watermarks no longer lose transparency when applied to images
+* Fixed: Fatal error when using NextGen Gallery with older Pro add-on versions that reference the legacy C_NextGen_Settings class
+* Fixed: SinglePicture display no longer crashes when width/height settings are not configured
+* Fixed: Imagebrowser now opens to the correct image when viewing images within albums (Thumbnails display type)
+
+= 4.1.0 - 03.11.2026
+* Added: Features page for discovering and managing available integrations
+* Added: CDN menu item in the admin sidebar
+* Added: Gallery deletion functionality from the Image Uploader
+* Added: Dynamic image size options in gallery settings
+* Added: Caching for gallery and album queries for improved performance
+* Added: Batch gallery fetching for better admin performance
+* Fixed: Gallery images now display correctly in ImageBrowser and Slideshow layouts
+* Fixed: REST gallery response cache is now invalidated on image changes
+* Fixed: Settings page data saving issue
+* Fixed: Basic layout fatal error
+* Fixed: Media file import issue
+* Fixed: Server error messages are now shown instead of generic fallback messages
+* Fixed: Thickbox style issue
+* Fixed: Undefined array key notice
+* Fixed: Gallery image count now refreshes correctly after preview loads
+* Fixed: EXIF rotation guard restored — images with non-rotation orientations no longer trigger unnecessary re-processing
+* Fixed: Metadata methods (get_IPTC, get_XMP) now correctly return the full array when called without arguments
+* Fixed: Gallery list cache is now per-user, preventing incorrect permission display across different user roles
+* Improved: Upgrade links now include utm_content tracking for analytics
+* Improved: Extensive PHPCS code quality fixes across the entire codebase (security, sanitization, escaping, naming * conventions)
+* Improved: Image uploader UI styling and layout
+* Improved: Error handling for gallery deletion and image operations
+
+= 4.0.5 - 02.12.2026 =
+* Fixed: Unresolved template.
+* Added: Convert WordPress galleries to Imagely — convert a single gallery from the block editor ("Convert to Imagely Gallery" in the sidebar) or bulk convert from Imagely → Settings → Convert Galleries; supports classic [gallery] shortcodes and Gutenberg Gallery blocks; preserves image metadata and backs up original content before conversion.
+* Fixed: Legacy Template dropdown no longer shows internal template files; only valid legacy templates appear in the list.
+* Fixed: Imagely Widget displays correctly again after legacy template dropdown improvements.
+* Improved: PHP 8.1+ compatibility; resolved deprecation warnings when previewing galleries or using legacy templates with empty image or gallery descriptions.
 
 = v4.0.3 - 12.18.2025 =
 • Added: REST endpoint to scan a gallery folder and import newly added images, and a client hook to trigger it.
