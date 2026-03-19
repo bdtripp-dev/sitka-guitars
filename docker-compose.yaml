@@ -1,6 +1,6 @@
 services:
   wordpress:
-    build: .
+    image: bdtrippdev/sitka-guitars:${TAG}
     restart: always
     labels:
       - "deunhealth.restart=true"
