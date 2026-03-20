@@ -1,5 +1,5 @@
 # ============================================================
-# 1. Environment Variables (critical)
+# 1. Environment Variables
 # ============================================================
 .env
 .env.*
@@ -30,7 +30,7 @@ wp/wp-content/languages/
 wp/wp-content/ai1wm-backups/
 
 # ============================================================
-# 4. Explicitly keep themes and plugins (your actual code)
+# 4. Explicitly keep themes and plugins
 # ============================================================
 !wp/wp-content/themes/**
 !wp/wp-content/plugins/**
@@ -59,3 +59,4 @@ secrets/
 local.sql
 docker-compose.override.yaml
 wp/wp-content/temp/
+!wp/wp-config.php
