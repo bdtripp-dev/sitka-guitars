@@ -16,9 +16,6 @@ wp/license.txt
 wp/readme.html
 wp/.htaccess
 
-# Environment-specific config (never tracked)
-wp/wp-config.php
-
 # ============================================================
 # 3. wp-content (track themes/plugins, ignore runtime folders)
 # ============================================================
