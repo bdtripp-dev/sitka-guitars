@@ -65,7 +65,6 @@ define('DISALLOW_FILE_MODS', false);
 define('WP_TEMP_DIR', __DIR__ . '/wp-content/temp/');
 
 define('WP_MEMORY_LIMIT', '256M');
-define('FORCE_SSL_ADMIN', true);
 define('WP_AUTO_UPDATE_CORE', false);
 define('AUTOMATIC_UPDATER_DISABLED', true);
 
@@ -74,7 +73,7 @@ define('WP_POST_REVISIONS', 10);
 set_time_limit(300);
 
 /**
- * Home and Site URL (per-environment)
+ * Other per-environment constants
  */
 if ($home = getenv('WP_HOME')) {
     define('WP_HOME', $home);
@@ -82,6 +81,7 @@ if ($home = getenv('WP_HOME')) {
 if ($siteurl = getenv('WP_SITEURL')) {
     define('WP_SITEURL', $siteurl);
 }
+define( 'FORCE_SSL_ADMIN', getenv('FORCE_SSL_ADMIN') === 'true' );
 
 /**
  * HTTPS reverse proxy support
