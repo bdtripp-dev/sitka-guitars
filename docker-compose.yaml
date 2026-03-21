@@ -53,6 +53,11 @@ services:
     depends_on:
       - wordpress
       - db
+    environment:
+      - WORDPRESS_DB_HOST=${PROJECT_NAME}-db-1:3306
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
     working_dir: /var/www/html
     volumes_from:
       - wordpress
