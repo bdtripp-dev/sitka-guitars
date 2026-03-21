@@ -54,8 +54,8 @@ services:
       - wordpress
       - db
     working_dir: /var/www/html
-    volumes:
-      - ./wp/wp-content:/var/www/html/wp-content
+    volumes_from:
+      - wordpress
     networks:
       - sitka_net
   db:
