@@ -56,6 +56,8 @@ services:
     working_dir: /var/www/html
     volumes_from:
       - wordpress
+    volumes:
+      - ./.env:/var/www/.env:ro
     networks:
       - sitka_net
   db:
