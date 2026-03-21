@@ -60,3 +60,4 @@ local.sql
 docker-compose.override.yaml
 wp/wp-content/temp/
 !wp/wp-config.php
+backups/
