@@ -6,6 +6,8 @@ services:
       - "deunhealth.restart=true"
     depends_on:
       - db
+    env_file:
+      - .env
     environment:
       - WORDPRESS_DB_HOST=${PROJECT_NAME}-db-1:3306
       - WORDPRESS_DB_NAME=${DB_NAME}
@@ -53,6 +55,8 @@ services:
     depends_on:
       - wordpress
       - db
+    env_file:
+      - .env
     environment:
       - WORDPRESS_DB_HOST=${PROJECT_NAME}-db-1:3306
       - WORDPRESS_DB_NAME=${DB_NAME}
