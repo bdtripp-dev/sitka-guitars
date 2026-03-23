@@ -50,7 +50,7 @@ services:
       - sitka_net
       - public_net
   wpcli:
-    image: bdtrippdev/sitka-guitars:${TAG}
+    image: wordpress:cli
     entrypoint: ["wp"]
     depends_on:
       - wordpress
@@ -66,7 +66,6 @@ services:
     volumes_from:
       - wordpress
     volumes:
-      - ./wp/wp-content:/var/www/html/wp-content
       - ./.env:/var/www/html/.env:ro
     networks:
       - sitka_net
