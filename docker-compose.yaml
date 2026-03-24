@@ -51,7 +51,6 @@ services:
       - public_net
   wpcli:
     image: wordpress:cli
-    entrypoint: ["wp"]
     depends_on:
       - wordpress
       - db
