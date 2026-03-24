@@ -1,24 +1,63 @@
-# Note: the following ignores everything except for my notes and .gitignore itself. 
+# ============================================================
+# 1. Environment Variables
+# ============================================================
+.env
+.env.*
 
-# Ignore core WordPress files and directories
-/wp-admin/
-/wp-includes/
-/index.php
-/license.txt
-/readme.html
-/xmlrpc.php
-/wp-*.php
-.htaccess
+# ============================================================
+# 2. WordPress Core (provided by Docker image)
+# ============================================================
+wp/wp-admin/
+wp/wp-includes/
+wp/wp-*.php
+wp/index.php
+wp/xmlrpc.php
+wp/license.txt
+wp/readme.html
+wp/.htaccess
 
-# Ignore sensitive configuration files (manage these separately per environment)
-wp-config.php
+# ============================================================
+# 3. wp-content (track themes/plugins, ignore runtime folders)
+# ============================================================
+wp/wp-content/uploads/
+wp/wp-content/cache/
+wp/wp-content/upgrade/
+wp/wp-content/upgrade-temp-backup/
+wp/wp-content/gallery/
+wp/wp-content/ngg/
+wp/wp-content/debug.log
+wp/wp-content/languages/
+wp/wp-content/ai1wm-backups/
 
-# Ignore all content directories (themes, plugins, uploads, etc.)
-/wp-content/*
+# ============================================================
+# 4. Explicitly keep themes and plugins
+# ============================================================
+!wp/wp-content/themes/**
+!wp/wp-content/plugins/**
 
-# Ignore logs, backups, and OS-generated files
+# ============================================================
+# 5. Build artifacts inside custom themes/plugins only
+# ============================================================
+wp/wp-content/themes/*/node_modules/
+wp/wp-content/plugins/*/node_modules/
+wp/wp-content/themes/*/composer.lock
+wp/wp-content/plugins/*/composer.lock
+
+# ============================================================
+# 6. Logs, OS junk, editor files
+# ============================================================
 *.log
 error_log
 *~
-.DS_Store
+**/.DS_Store
 Thumbs.db
+.vscode/
+.idea/
+
+*:Zone.Identifier
+secrets/
+local.sql
+docker-compose.override.yaml
+wp/wp-content/temp/
+!wp/wp-config.php
+backups/

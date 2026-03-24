@@ -1,0 +1,99 @@
+services:
+  wordpress:
+    image: bdtrippdev/sitka-guitars:${TAG}
+    restart: always
+    labels:
+      - "deunhealth.restart=true"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - WORDPRESS_DB_HOST=${PROJECT_NAME}-db-1:3306
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
+      - VIRTUAL_HOST=${FQDN}
+      - WORDPRESS_SKIP_CHOWN=1
+
+      # Salts
+      - WORDPRESS_AUTH_KEY=${WORDPRESS_AUTH_KEY}
+      - WORDPRESS_SECURE_AUTH_KEY=${WORDPRESS_SECURE_AUTH_KEY}
+      - WORDPRESS_LOGGED_IN_KEY=${WORDPRESS_LOGGED_IN_KEY}
+      - WORDPRESS_NONCE_KEY=${WORDPRESS_NONCE_KEY}
+      - WORDPRESS_AUTH_SALT=${WORDPRESS_AUTH_SALT}
+      - WORDPRESS_SECURE_AUTH_SALT=${WORDPRESS_SECURE_AUTH_SALT}
+      - WORDPRESS_LOGGED_IN_SALT=${WORDPRESS_LOGGED_IN_SALT}
+      - WORDPRESS_NONCE_SALT=${WORDPRESS_NONCE_SALT}
+
+      # Table prefix
+      - WORDPRESS_TABLE_PREFIX=${WORDPRESS_TABLE_PREFIX}
+
+      # Debug settings
+      - WP_DEBUG=${WP_DEBUG}
+      - WP_DEBUG_LOG=${WP_DEBUG_LOG}
+      - WP_DEBUG_DISPLAY=${WP_DEBUG_DISPLAY}
+      - WP_FILESYSTEM_DEBUG=${WP_FILESYSTEM_DEBUG}
+
+      # MISC
+      - FORCE_SSL_ADMIN=${FORCE_SSL_ADMIN}
+    healthcheck:
+      test: ["CMD", "php", "-v"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    volumes:
+      - ./wp/wp-content:/var/www/html/wp-content
+    user: "www-data"
+    networks:
+      - sitka_net
+      - public_net
+  wpcli:
+    image: wordpress:cli
+    depends_on:
+      - wordpress
+      - db
+    env_file:
+      - .env
+    environment:
+      - WORDPRESS_DB_HOST=${PROJECT_NAME}-db-1:3306
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
+    working_dir: /var/www/html
+    volumes_from:
+      - wordpress
+    volumes:
+      - ./.env:/var/www/html/.env:ro
+    networks:
+      - sitka_net
+  db:
+    image: mysql:8.4
+    restart: always
+    environment:
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD_FILE=/run/secrets/db_password
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - sitka_net
+    secrets:
+      - db_password
+      - db_root_password
+volumes:
+  wp-content:
+  db-data:
+networks:
+  sitka_net:
+    driver: bridge
+  public_net:
+    name: ${ENV_NAME}_public
+    external: true
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  db_root_password:
+    file: ./secrets/db_root_password.txt
